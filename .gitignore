@@ -1,0 +1,4 @@
+node_modules/
+server.cert
+server.key
+.DS_Store

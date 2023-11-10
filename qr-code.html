@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf8">
+    <title>QR Code</title>
+    <!-- link qrcodejs min in GitHub repo 
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js">
+    -->
+    <script src="./qrcode.min.js">
+    </script>
+</head>
+<body>
+    <div id=".qr-code"></div>
+    <script type="text/javascript">
+        window.max.bindInlet('setUrl', (url) => {
+            makeQRCode(url);
+        })
+
+        window.max.bindInlet('clear', () => {
+            document.getElementById(".qr-code").innerHTML = "";
+        })
+
+        function makeQRCode(urlIn) {
+            qrcode = new QRCode(document.getElementById(".qr-code"), 
+            {
+                text: `${urlIn}`,
+                width: 150,
+                height: 150,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+    </script>
+</body>
+</html>

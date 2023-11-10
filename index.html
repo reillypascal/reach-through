@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Motion Sensor App</title>
+
+        <link rel="stylesheet" href="global.css">
+
+        <script src="/socket.io/socket.io.js"></script>
+    </head>
+    <body>
+        
+        <button id="accelPermsButton" onclick="getIMU()">Get Sensor Permissions</button>
+        <fieldset>
+            <p>Select performer:
+                <select id="performerSelect" name="performerSelect">
+                    <option value="/player1">Player 1</option>
+                    <option value="/player2">Player 2</option>
+                    <option value="/player3">Player 3</option>
+                    <option value="/player4">Player 4</option>
+                </select>
+            </p>
+        </fieldset>
+        <h1>Device Orientation:</h1>
+        <p><span id="orientationBeta"></span></p><br/>
+        <p><span id="orientationGamma"></span></p><br/>
+        <p><span id="orientationAlpha"></span></p><br/>
+        <h1>Device Motion Rate:</h1>
+        <p><span id="motionAlpha"></span></p><br/>
+        <p><span id="motionBeta"></span></p><br/>
+        <p><span id="motionGamma"></span></p><br/>
+
+        <script>
+            let selectedPlayer = io("/player1");
+            let selector = document.getElementById("performerSelect");
+            selector.addEventListener('change', event => {
+                selectedPlayer.disconnect();
+                delete selectedPlayer.io.nsps[selectedPlayer.nsp];
+                delete selectedPlayer;
+                selectedPlayer = io(selector.value);
+                eventListenerUpdate();
+            });
+
+            function wrap(inVal, mod) {
+                inVal %= mod;
+                return inVal < 0 ? inVal + mod : inVal;
+            }
+
+            async function orientationHandler(event) {
+                document.getElementById('orientationAlpha').textContent = "Yaw: " + (wrap(event.alpha + 180, 360) - 180).toFixed(2).toString() + "º";
+                document.getElementById('orientationBeta').textContent = "Pitch: " + event.beta.toFixed(2).toString() + "º";
+                document.getElementById('orientationGamma').textContent = "Roll: " + event.gamma.toFixed(2).toString() + "º";
+
+                await selectedPlayer.emit('orient', {alpha: event.alpha, beta: event.beta, gamma: event.gamma});
+            }
+
+            async function motionHandler(event) {
+                let motionAlpha = document.getElementById('motionAlpha');
+                let motionBeta = document.getElementById('motionBeta');
+                let motionGamma = document.getElementById('motionGamma');
+                // if event.rotationRate, use that; else use event.accelerationIncludingGravity
+                if (event.rotationRate) {
+                    motionAlpha.textContent = "Pitch: " + Math.round(event.rotationRate.alpha).toString();
+                    motionBeta.textContent = "Roll: " + Math.round(event.rotationRate.beta).toString();
+                    motionGamma.textContent = "Yaw: " + Math.round(event.rotationRate.gamma).toString();
+
+                    await selectedPlayer.emit('motion', event.rotationRate);
+                } else {
+                    motionAlpha.textContent = "X: " + Math.round(event.accelerationIncludingGravity.x).toString();
+                    motionBeta.textContent = "Y: " + Math.round(event.accelerationIncludingGravity.y).toString();
+                    motionGamma.textContent = "Z: " + Math.round(event.accelerationIncludingGravity.z).toString();
+
+                    await selectedPlayer.emit('accel', event.accelerationIncludingGravity);
+                }
+            }
+
+            function eventListenerUpdate() {
+                // units in degrees
+                window.removeEventListener('deviceorientation', event => orientationHandler(event));
+                window.addEventListener('deviceorientation', event => orientationHandler(event));
+                // units in m/s^2
+                window.removeEventListener('devicemotion', event => motionHandler(event));
+                window.addEventListener('devicemotion', event => motionHandler(event));
+            }
+
+            function getIMU(){
+                DeviceMotionEvent.requestPermission().then(response => {
+                    if (response == 'granted') {
+                        //selectedPlayer = io(selector.value);
+                        eventListenerUpdate();
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>
