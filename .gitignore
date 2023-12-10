@@ -1,4 +1,5 @@
 node_modules/
+.DS_Store
+qrcode.min.js
 server.cert
 server.key
-.DS_Store
